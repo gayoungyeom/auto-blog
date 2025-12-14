@@ -1,0 +1,20 @@
+# Google Gemini API
+google-generativeai>=0.8.0
+
+# News collection
+feedparser>=6.0.10
+requests>=2.31.0
+
+# Email
+aiosmtplib>=3.0.0
+
+# Web server for publish approval
+flask>=3.0.0
+gunicorn>=21.2.0
+
+# Tistory API
+httpx>=0.27.0
+
+# Utils
+python-dotenv>=1.0.0
+schedule>=1.2.0
