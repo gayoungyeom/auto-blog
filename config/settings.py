@@ -19,17 +19,7 @@ CATEGORIES = {
     "ai": {
         "name": "AI/인공지능",
         "keywords": ["AI", "인공지능", "ChatGPT", "GPT", "LLM", "머신러닝", "딥러닝", "OpenAI", "Gemini", "Claude"],
-        "weight": 0.7,  # 70% 확률
-    },
-    "tech": {
-        "name": "테크 리뷰",
-        "keywords": ["스마트폰", "애플", "삼성", "구글", "테크", "가젯", "앱", "소프트웨어"],
-        "weight": 0.15,
-    },
-    "economy": {
-        "name": "시사/경제",
-        "keywords": ["경제", "주식", "투자", "금리", "환율", "부동산", "스타트업"],
-        "weight": 0.15,
+        "weight": 1.0,
     },
 }
 

@@ -138,18 +138,19 @@ def main():
     info_parser = subparsers.add_parser("info", help="정보형 글 생성")
     info_parser.add_argument(
         "--category",
-        choices=["ai", "tech", "economy"],
-        help="카테고리 선택 (기본: 가중치 기반 자동 선택)",
+        choices=["ai"],
+        default="ai",
+        help="카테고리 선택 (기본: ai)",
     )
 
     # 체험형 글 생성
-    # exp_parser = subparsers.add_parser("experience", help="체험형 글 생성")
-    # exp_parser.add_argument("memo", help="경험 메모 (짧은 설명)")
-    # exp_parser.add_argument(
-    #     "--category",
-    #     default="일상/리뷰",
-    #     help="카테고리 (기본: 일상/리뷰)",
-    # )
+    exp_parser = subparsers.add_parser("experience", help="체험형 글 생성")
+    exp_parser.add_argument("memo", help="경험 메모 (짧은 설명)")
+    exp_parser.add_argument(
+        "--category",
+        default="일상/리뷰",
+        help="카테고리 (기본: 일상/리뷰)",
+    )
 
     # 저장된 글 목록
     subparsers.add_parser("list", help="저장된 글 목록")
@@ -165,10 +166,8 @@ def main():
     else:
         parser.print_help()
         print("\n사용 예시:")
-        print("  python main.py info              # AI 뉴스 글 생성")
-        print("  python main.py info --category tech  # 테크 뉴스 글 생성")
-        print('  python main.py experience "홍대 맛집 후기"  # 체험 글 생성')
-        print("  python main.py list              # 저장된 글 목록")
+        print("  python main.py info    # AI 뉴스 글 생성")
+        print("  python main.py list    # 저장된 글 목록")
 
 
 if __name__ == "__main__":

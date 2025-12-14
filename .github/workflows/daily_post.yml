@@ -16,8 +16,6 @@ on:
         options:
           - ''
           - ai
-          - tech
-          - economy
 
 jobs:
   generate-post:
