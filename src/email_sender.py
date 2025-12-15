@@ -17,6 +17,10 @@ from config.settings import (
     TISTORY_BLOG_NAME,
 )
 
+# 템플릿 파일 경로
+TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
+EMAIL_TEMPLATE_PATH = os.path.join(TEMPLATE_DIR, "email_template.html")
+
 
 class EmailSender:
     """Gmail SMTP 기반 이메일 발송기"""
@@ -29,99 +33,37 @@ class EmailSender:
         self.recipient_email = NOTIFY_EMAIL
         self.blog_name = TISTORY_BLOG_NAME
 
+    def _load_template(self) -> str:
+        """HTML 템플릿 파일 로드"""
+        with open(EMAIL_TEMPLATE_PATH, "r", encoding="utf-8") as f:
+            return f.read()
+
     def _create_email_html(self, article: dict) -> str:
         """복붙 친화적인 HTML 이메일 생성"""
+        template = self._load_template()
+
         # 티스토리 글쓰기 페이지 URL
         write_url = f"https://{self.blog_name}.tistory.com/manage/newpost"
 
         # 태그 문자열 (복사용)
         tags_str = ", ".join(article.get("tags", []))
 
-        html = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 0 auto; padding: 20px; background: #f5f5f5; }}
-        .container {{ background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
-        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; }}
-        .header h1 {{ margin: 0 0 5px 0; font-size: 22px; }}
-        .header .date {{ opacity: 0.9; font-size: 14px; }}
-        .section {{ padding: 20px 25px; border-bottom: 1px solid #eee; }}
-        .section:last-child {{ border-bottom: none; }}
-        .section-title {{ font-size: 12px; text-transform: uppercase; color: #888; margin-bottom: 8px; letter-spacing: 1px; }}
-        .copy-box {{ background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin: 10px 0; font-family: inherit; }}
-        .title-box {{ font-size: 18px; font-weight: bold; color: #333; }}
-        .tags-box {{ color: #666; }}
-        .content-box {{ max-height: 500px; overflow-y: auto; line-height: 1.8; }}
-        .content-box h2 {{ color: #333; margin-top: 25px; margin-bottom: 15px; font-size: 20px; }}
-        .content-box h3 {{ color: #444; margin-top: 20px; margin-bottom: 10px; font-size: 17px; }}
-        .content-box p {{ margin: 12px 0; }}
-        .content-box ul, .content-box ol {{ margin: 15px 0; padding-left: 25px; }}
-        .content-box li {{ margin: 8px 0; }}
-        .button-section {{ text-align: center; padding: 30px; background: #fafafa; }}
-        .write-btn {{ display: inline-block; background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); color: white !important; padding: 16px 50px; border-radius: 8px; text-decoration: none; font-size: 18px; font-weight: bold; box-shadow: 0 4px 15px rgba(255,107,53,0.3); }}
-        .write-btn:hover {{ opacity: 0.9; }}
-        .steps {{ background: #fff3cd; border-radius: 8px; padding: 20px; margin: 20px 25px; }}
-        .steps h3 {{ margin: 0 0 15px 0; color: #856404; font-size: 16px; }}
-        .steps ol {{ margin: 0; padding-left: 20px; color: #856404; }}
-        .steps li {{ margin: 8px 0; }}
-        .meta-info {{ font-size: 14px; color: #666; }}
-        .footer {{ text-align: center; padding: 20px; color: #888; font-size: 12px; background: #fafafa; }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>새 블로그 글이 준비되었습니다</h1>
-            <div class="date">{datetime.now().strftime('%Y년 %m월 %d일 %H:%M')} | {'정보형 글' if article.get('article_type') == 'info' else '체험형 글'}</div>
-        </div>
+        # 글 유형
+        article_type = "정보형 글" if article.get("article_type") == "info" else "체험형 글"
 
-        <div class="steps">
-            <h3>발행 방법 (30초 컷)</h3>
-            <ol>
-                <li>아래 <strong>[티스토리에서 글쓰기]</strong> 버튼 클릭</li>
-                <li>제목 복사 → 붙여넣기</li>
-                <li>본문 복사 → 붙여넣기 (HTML 모드)</li>
-                <li>태그 입력 → 발행!</li>
-            </ol>
-        </div>
+        # 템플릿 변수 치환
+        html = template.format(
+            date=datetime.now().strftime("%Y년 %m월 %d일 %H:%M"),
+            article_type=article_type,
+            title=article.get("title", "제목 없음"),
+            tags=tags_str,
+            meta_description=article.get("meta_description", ""),
+            content=article.get("content", "내용 없음"),
+            write_url=write_url,
+            category=article.get("category", "N/A"),
+            article_id=article.get("id", "N/A"),
+        )
 
-        <div class="section">
-            <div class="section-title">제목 (복사하세요)</div>
-            <div class="copy-box title-box">{article.get('title', '제목 없음')}</div>
-        </div>
-
-        <div class="section">
-            <div class="section-title">태그 (복사하세요)</div>
-            <div class="copy-box tags-box">{tags_str}</div>
-        </div>
-
-        <div class="section">
-            <div class="section-title">메타 설명</div>
-            <div class="meta-info">{article.get('meta_description', '')}</div>
-        </div>
-
-        <div class="section">
-            <div class="section-title">본문 (HTML 모드에서 복사하세요)</div>
-            <div class="copy-box content-box">
-                {article.get('content', '내용 없음')}
-            </div>
-        </div>
-
-        <div class="button-section">
-            <a href="{write_url}" class="write-btn" target="_blank">티스토리에서 글쓰기</a>
-        </div>
-
-        <div class="footer">
-            <p>이 메일은 Auto-Blog 시스템에서 자동으로 발송되었습니다.</p>
-            <p>카테고리: {article.get('category', 'N/A')} | 글 ID: {article.get('id', 'N/A')}</p>
-        </div>
-    </div>
-</body>
-</html>
-"""
         return html
 
     def _create_plain_text(self, article: dict) -> str:

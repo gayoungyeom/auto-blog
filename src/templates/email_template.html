@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .container {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        background: #252526;
+        color: white;
+        padding: 25px;
+      }
+      .header h1 {
+        margin: 0 0 5px 0;
+        font-size: 22px;
+      }
+      .header .date {
+        opacity: 0.9;
+        font-size: 14px;
+      }
+      .section {
+        padding: 20px 25px;
+        border-bottom: 1px solid #eee;
+      }
+      .section:last-child {
+        border-bottom: none;
+      }
+      .section-title {
+        font-size: 12px;
+        text-transform: uppercase;
+        color: #888;
+        margin-bottom: 8px;
+        letter-spacing: 1px;
+      }
+      .copy-box {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+        font-family: inherit;
+      }
+      .title-box {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+      }
+      .tags-box {
+        color: #666;
+      }
+      .content-box {
+        max-height: 500px;
+        overflow-y: auto;
+        line-height: 1.8;
+      }
+      .content-box h2 {
+        color: #333;
+        margin-top: 25px;
+        margin-bottom: 15px;
+        font-size: 20px;
+      }
+      .content-box h3 {
+        color: #444;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        font-size: 17px;
+      }
+      .content-box p {
+        margin: 12px 0;
+      }
+      .content-box ul,
+      .content-box ol {
+        margin: 15px 0;
+        padding-left: 25px;
+      }
+      .content-box li {
+        margin: 8px 0;
+      }
+      .button-section {
+        text-align: center;
+        padding: 30px;
+        background: #fafafa;
+      }
+      .write-btn {
+        display: inline-block;
+        background: #252526;
+        color: white !important;
+        padding: 16px 50px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 18px;
+        font-weight: bold;
+      }
+      .write-btn:hover {
+        opacity: 0.9;
+      }
+      .meta-info {
+        font-size: 14px;
+        color: #666;
+      }
+      .footer {
+        text-align: center;
+        padding: 20px;
+        color: #888;
+        font-size: 12px;
+        background: #fafafa;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>새로운 블로그 글이 준비되었습니다.</h1>
+        <div class="date">{date} | {article_type}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">제목 (복사하세요)</div>
+        <div class="copy-box title-box">{title}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">태그 (복사하세요)</div>
+        <div class="copy-box tags-box">{tags}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">메타 설명</div>
+        <div class="meta-info">{meta_description}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">본문 (HTML 모드에서 복사하세요)</div>
+        <div class="copy-box content-box">{content}</div>
+      </div>
+
+      <div class="button-section">
+        <a href="{write_url}" class="write-btn" target="_blank"
+          >티스토리에서 글쓰기</a
+        >
+      </div>
+
+      <div class="footer">
+        <p>이 메일은 Auto-Blog 시스템에서 자동으로 발송되었습니다.</p>
+        <p>카테고리: {category} | 글 ID: {article_id}</p>
+      </div>
+    </div>
+  </body>
+</html>
