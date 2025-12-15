@@ -41,10 +41,47 @@ class ContentGenerator:
         if json_match:
             text = json_match.group(0)
 
+        # 첫 번째 시도: 그대로 파싱
         try:
             return json.loads(text)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"JSON 파싱 실패: {e}\n원본: {text[:500]}")
+        except json.JSONDecodeError:
+            pass
+
+        # 두 번째 시도: content 필드 내 문제가 있는 문자 수정
+        try:
+            # JSON 문자열 내부의 이스케이프 안 된 줄바꿈 처리
+            text = re.sub(r'(?<!\\)\n', '\\n', text)
+            # 이스케이프 안 된 탭 처리
+            text = re.sub(r'(?<!\\)\t', '\\t', text)
+            return json.loads(text)
+        except json.JSONDecodeError:
+            pass
+
+        # 세 번째 시도: content 필드만 추출해서 재구성
+        try:
+            title_match = re.search(r'"title"\s*:\s*"([^"]*)"', text)
+            meta_match = re.search(r'"meta_description"\s*:\s*"([^"]*)"', text)
+            content_match = re.search(r'"content"\s*:\s*"(.*?)",\s*"tags"', text, re.DOTALL)
+            tags_match = re.search(r'"tags"\s*:\s*\[(.*?)\]', text, re.DOTALL)
+            category_match = re.search(r'"category"\s*:\s*"([^"]*)"', text)
+
+            if title_match and content_match:
+                # 태그 파싱
+                tags = []
+                if tags_match:
+                    tags = [t.strip().strip('"') for t in tags_match.group(1).split(',')]
+
+                return {
+                    "title": title_match.group(1),
+                    "meta_description": meta_match.group(1) if meta_match else "",
+                    "content": content_match.group(1).replace('\n', '\\n'),
+                    "tags": tags,
+                    "category": category_match.group(1) if category_match else "",
+                }
+        except Exception:
+            pass
+
+        raise ValueError(f"JSON 파싱 실패\n원본: {text[:500]}")
 
     def generate_info_article(self, news_data: dict) -> dict:
         """정보형 글 생성"""
