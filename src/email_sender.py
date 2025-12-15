@@ -60,19 +60,18 @@ class EmailSender:
             category=article.get("category", ""),
         )
 
-        # 템플릿 변수 치환
-        html = template.format(
-            date=datetime.now().strftime("%Y년 %m월 %d일 %H:%M"),
-            article_type=article_type,
-            title=article.get("title", "제목 없음"),
-            tags=tags_str,
-            meta_description=article.get("meta_description", ""),
-            content=article.get("content", "내용 없음"),
-            write_url=write_url,
-            category=article.get("category", "N/A"),
-            article_id=article.get("id", "N/A"),
-            thumbnail_url=thumbnail_url,
-        )
+        # 템플릿 변수 치환 (replace 사용 - CSS의 {}와 충돌 방지)
+        html = template
+        html = html.replace("{date}", datetime.now().strftime("%Y년 %m월 %d일 %H:%M"))
+        html = html.replace("{article_type}", article_type)
+        html = html.replace("{title}", article.get("title", "제목 없음"))
+        html = html.replace("{tags}", tags_str)
+        html = html.replace("{meta_description}", article.get("meta_description", ""))
+        html = html.replace("{content}", article.get("content", "내용 없음"))
+        html = html.replace("{write_url}", write_url)
+        html = html.replace("{category}", article.get("category", "N/A"))
+        html = html.replace("{article_id}", article.get("id", "N/A"))
+        html = html.replace("{thumbnail_url}", thumbnail_url)
 
         return html
 
