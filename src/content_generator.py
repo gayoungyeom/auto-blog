@@ -55,6 +55,7 @@ class ContentGenerator:
         prompt = INFO_ARTICLE_PROMPT.format(
             category_name=news_data["category_name"],
             main_title=news_data["main_article"]["title"],
+            main_link=news_data["main_article"]["link"],
             source=news_data["main_article"]["source"],
             related_articles=related or "없음",
         )

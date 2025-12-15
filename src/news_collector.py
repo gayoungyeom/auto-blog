@@ -53,24 +53,54 @@ class NewsCollector:
         weights = [self.categories[c]["weight"] for c in categories]
         return random.choices(categories, weights=weights, k=1)[0]
 
-    def collect_news(self, category: Optional[str] = None) -> dict:
-        """뉴스 수집 메인 함수"""
+    def collect_news(
+        self,
+        category: Optional[str] = None,
+        languages: Optional[list[tuple[str, str]]] = None
+    ) -> dict:
+        """뉴스 수집 메인 함수 (글로벌 뉴스 지원)
+
+        Args:
+            category: 수집할 카테고리 (None이면 가중치 기반 랜덤 선택)
+            languages: (언어코드, 국가코드) 튜플 리스트
+                       기본값: [("ko", "KR"), ("en", "US")]
+                       예시: [("ja", "JP"), ("de", "DE")]
+        """
         if category is None:
             category = self.select_category()
 
+        if languages is None:
+            languages = [("ko", "KR"), ("en", "US")]
+
         cat_info = self.categories[category]
         query = self._build_query(cat_info["keywords"])
-        articles = self._fetch_news(query)
 
-        if not articles:
+        # 여러 언어/국가에서 기사 수집
+        all_articles = []
+        for lang, country in languages:
+            articles = self._fetch_news(query, lang=lang, country=country)
+            for article in articles:
+                article["lang"] = lang
+                article["country"] = country
+            all_articles.extend(articles)
+
+        # 중복 제거 (링크 기준)
+        seen_links = set()
+        unique_articles = []
+        for article in all_articles:
+            if article["link"] not in seen_links:
+                seen_links.add(article["link"])
+                unique_articles.append(article)
+
+        if not unique_articles:
             # 폴백: AI 카테고리로 재시도
             if category != "ai":
-                return self.collect_news("ai")
+                return self.collect_news("ai", languages=languages)
             return {"category": category, "articles": [], "error": "No articles found"}
 
         # 가장 관련성 높은 기사 선택 (첫 번째 기사)
-        main_article = articles[0]
-        related_articles = articles[1:4]  # 참고용 관련 기사 3개
+        main_article = unique_articles[0]
+        related_articles = unique_articles[1:4]  # 참고용 관련 기사 3개
 
         return {
             "category": category,
@@ -78,16 +108,27 @@ class NewsCollector:
             "main_article": main_article,
             "related_articles": related_articles,
             "collected_at": datetime.now().isoformat(),
+            "languages": languages,
         }
 
 
 # 테스트
 if __name__ == "__main__":
     collector = NewsCollector()
+
+    # 기본: 한국어 + 영어 뉴스 수집
     result = collector.collect_news()
-    print(f"\n카테고리: {result['category_name']}")
-    print(f"메인 기사: {result['main_article']['title']}")
+    print(f"\n=== 글로벌 뉴스 수집 (기본: 한국어 + 영어) ===")
+    print(f"카테고리: {result['category_name']}")
+    print(f"수집 언어: {result['languages']}")
+    print(f"\n메인 기사: {result['main_article']['title']}")
     print(f"출처: {result['main_article']['source']}")
+    print(f"언어/국가: {result['main_article']['lang']}/{result['main_article']['country']}")
     print(f"\n관련 기사:")
     for i, article in enumerate(result['related_articles'], 1):
-        print(f"  {i}. {article['title']}")
+        print(f"  {i}. [{article['lang']}] {article['title']}")
+
+    # 영어만 수집 예시
+    print(f"\n=== 영어만 수집 ===")
+    result_en = collector.collect_news(languages=[("en", "US")])
+    print(f"메인 기사: {result_en['main_article']['title']}")
