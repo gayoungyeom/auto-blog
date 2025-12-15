@@ -16,6 +16,7 @@ from config.settings import (
     NOTIFY_EMAIL,
     TISTORY_BLOG_NAME,
 )
+from src.thumbnail_generator import ThumbnailGenerator
 
 # 템플릿 파일 경로
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
@@ -32,6 +33,7 @@ class EmailSender:
         self.sender_password = GMAIL_APP_PASSWORD
         self.recipient_email = NOTIFY_EMAIL
         self.blog_name = TISTORY_BLOG_NAME
+        self.thumbnail_generator = ThumbnailGenerator()
 
     def _load_template(self) -> str:
         """HTML 템플릿 파일 로드"""
@@ -51,6 +53,13 @@ class EmailSender:
         # 글 유형
         article_type = "정보형 글" if article.get("article_type") == "info" else "체험형 글"
 
+        # 썸네일 URL 생성
+        thumbnail_url = self.thumbnail_generator.generate_thumbnail_url(
+            title=article.get("title", ""),
+            tags=article.get("tags", []),
+            category=article.get("category", ""),
+        )
+
         # 템플릿 변수 치환
         html = template.format(
             date=datetime.now().strftime("%Y년 %m월 %d일 %H:%M"),
@@ -62,6 +71,7 @@ class EmailSender:
             write_url=write_url,
             category=article.get("category", "N/A"),
             article_id=article.get("id", "N/A"),
+            thumbnail_url=thumbnail_url,
         )
 
         return html

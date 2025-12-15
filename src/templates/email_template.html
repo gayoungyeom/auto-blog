@@ -133,6 +133,31 @@
         font-size: 14px;
         color: #666;
       }
+      .thumbnail-section {
+        text-align: center;
+        padding: 20px 25px;
+        border-bottom: 1px solid #eee;
+      }
+      .thumbnail-img {
+        max-width: 300px;
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .thumbnail-download {
+        display: inline-block;
+        margin-top: 12px;
+        background: #334155;
+        color: white !important;
+        padding: 8px 16px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 14px;
+      }
+      .thumbnail-download:hover {
+        background: #475569;
+      }
       .footer {
         text-align: center;
         padding: 20px;
@@ -199,6 +224,15 @@
           </button>
         </div>
         <div class="copy-box content-box" id="content-box">{content}</div>
+      </div>
+
+      <div class="thumbnail-section">
+        <div class="section-title" style="margin-bottom: 12px;">썸네일 (1:1)</div>
+        <img src="{thumbnail_url}" alt="썸네일" class="thumbnail-img" />
+        <br />
+        <a href="{thumbnail_url}" download="thumbnail.png" class="thumbnail-download" target="_blank">
+          이미지 다운로드
+        </a>
       </div>
 
       <div class="button-section">
