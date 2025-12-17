@@ -49,20 +49,45 @@ class ThumbnailGenerator:
             "메타버스": "metaverse",
             "VR": "virtual reality",
             "AR": "augmented reality",
+            "건강": "health wellness",
+            "다이어트": "diet fitness",
+            "운동": "exercise workout",
+            "영양제": "supplements vitamins",
+            "경제": "economy finance",
+            "주식": "stock market",
+            "부동산": "real estate",
+            "투자": "investment",
+            "생활": "lifestyle",
+            "인테리어": "interior design",
+            "요리": "cooking food",
+            "맛집": "restaurant food",
+            "레시피": "recipe cooking",
         }
 
-        # 태그에서 영어 키워드 추출
         english_keywords = []
+
+        # 제목에서 키워드 추출
+        for kor, eng in keyword_map.items():
+            if kor in title:
+                english_keywords.append(eng)
+                if len(english_keywords) >= 2:
+                    break
+
+        # 태그에서 영어 키워드 추출
         for tag in tags[:3]:  # 상위 3개 태그만 사용
+            if len(english_keywords) >= 4:
+                break
             tag_lower = tag.lower()
             if tag_lower in keyword_map:
-                english_keywords.append(keyword_map[tag_lower])
+                if keyword_map[tag_lower] not in english_keywords:
+                    english_keywords.append(keyword_map[tag_lower])
             elif tag.isascii():  # 이미 영어인 경우
-                english_keywords.append(tag)
+                if tag not in english_keywords:
+                    english_keywords.append(tag)
             else:
                 # 매핑에 없는 한글은 기본 키워드로
                 for kor, eng in keyword_map.items():
-                    if kor in tag:
+                    if kor in tag and eng not in english_keywords:
                         english_keywords.append(eng)
                         break
 
@@ -70,7 +95,7 @@ class ThumbnailGenerator:
         if not english_keywords:
             english_keywords = ["technology", "digital", "innovation"]
 
-        return ", ".join(english_keywords[:3])
+        return ", ".join(english_keywords[:4])
 
     def _build_prompt(self, title: str, tags: list[str], category: str = "") -> str:
         """이미지 생성용 프롬프트 구성"""

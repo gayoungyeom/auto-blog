@@ -39,33 +39,12 @@
       .section:last-child {
         border-bottom: none;
       }
-      .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-      }
       .section-title {
         font-size: 12px;
         text-transform: uppercase;
         color: #888;
         letter-spacing: 1px;
-      }
-      .copy-btn {
-        background: #334155;
-        color: white;
-        border: none;
-        padding: 6px 12px;
-        border-radius: 4px;
-        font-size: 12px;
-        cursor: pointer;
-        transition: all 0.2s;
-      }
-      .copy-btn:hover {
-        background: #475569;
-      }
-      .copy-btn.copied {
-        background: #e66a0a;
+        margin-bottom: 8px;
       }
       .copy-box {
         background: #f8f9fa;
@@ -132,6 +111,11 @@
       .meta-info {
         font-size: 14px;
         color: #666;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
       }
       .thumbnail-section {
         text-align: center;
@@ -165,6 +149,11 @@
         font-size: 12px;
         background: #fafafa;
       }
+      .copy-hint {
+        font-size: 11px;
+        color: #999;
+        margin-top: 4px;
+      }
     </style>
   </head>
   <body>
@@ -175,62 +164,40 @@
       </div>
 
       <div class="section">
-        <div class="section-header">
-          <div class="section-title">제목</div>
-          <button
-            class="copy-btn"
-            onclick="copyToClipboard('title-content', this)"
-          >
-            복사
-          </button>
-        </div>
-        <div class="copy-box title-box" id="title-content">{title}</div>
+        <div class="section-title">제목</div>
+        <div class="copy-box title-box">{title}</div>
+        <div class="copy-hint">* 드래그하여 복사</div>
       </div>
 
       <div class="section">
-        <div class="section-header">
-          <div class="section-title">태그</div>
-          <button
-            class="copy-btn"
-            onclick="copyToClipboard('tags-content', this)"
-          >
-            복사
-          </button>
-        </div>
-        <div class="copy-box tags-box" id="tags-content">{tags}</div>
+        <div class="section-title">태그</div>
+        <div class="copy-box tags-box">{tags}</div>
+        <div class="copy-hint">* 드래그하여 복사</div>
       </div>
 
       <div class="section">
-        <div class="section-header">
-          <div class="section-title">메타 설명</div>
-          <button
-            class="copy-btn"
-            onclick="copyToClipboard('meta-content', this)"
-          >
-            복사
-          </button>
-        </div>
-        <div class="meta-info" id="meta-content">{meta_description}</div>
+        <div class="section-title">메타 설명</div>
+        <div class="meta-info">{meta_description}</div>
       </div>
 
       <div class="section">
-        <div class="section-header">
-          <div class="section-title">본문 (HTML)</div>
-          <button
-            class="copy-btn"
-            onclick="copyHtmlContent('content-box', this)"
-          >
-            HTML 복사
-          </button>
-        </div>
-        <div class="copy-box content-box" id="content-box">{content}</div>
+        <div class="section-title">본문</div>
+        <div class="copy-box content-box">{content}</div>
+        <div class="copy-hint">* 티스토리 HTML 모드에서 붙여넣기</div>
       </div>
 
       <div class="thumbnail-section">
-        <div class="section-title" style="margin-bottom: 12px;">썸네일 (1:1)</div>
+        <div class="section-title" style="margin-bottom: 12px">
+          썸네일 (1:1)
+        </div>
         <img src="{thumbnail_url}" alt="썸네일" class="thumbnail-img" />
         <br />
-        <a href="{thumbnail_url}" download="thumbnail.png" class="thumbnail-download" target="_blank">
+        <a
+          href="{thumbnail_url}"
+          download="thumbnail.png"
+          class="thumbnail-download"
+          target="_blank"
+        >
           이미지 다운로드
         </a>
       </div>
@@ -246,68 +213,5 @@
         <p>카테고리: {category} | 글 ID: {article_id}</p>
       </div>
     </div>
-
-    <script>
-      function copyToClipboard(elementId, button) {
-        const element = document.getElementById(elementId);
-        const text = element.innerText || element.textContent;
-
-        navigator.clipboard
-          .writeText(text)
-          .then(() => {
-            button.textContent = '복사됨!';
-            button.classList.add('copied');
-            setTimeout(() => {
-              button.textContent = '복사';
-              button.classList.remove('copied');
-            }, 1000);
-          })
-          .catch((err) => {
-            console.error('복사 실패:', err);
-            fallbackCopy(text, button);
-          });
-      }
-
-      function copyHtmlContent(elementId, button) {
-        const element = document.getElementById(elementId);
-        const html = element.innerHTML;
-
-        navigator.clipboard
-          .writeText(html)
-          .then(() => {
-            button.textContent = '복사됨!';
-            button.classList.add('copied');
-            setTimeout(() => {
-              button.textContent = 'HTML 복사';
-              button.classList.remove('copied');
-            }, 1000);
-          })
-          .catch((err) => {
-            console.error('복사 실패:', err);
-            fallbackCopy(html, button);
-          });
-      }
-
-      function fallbackCopy(text, button) {
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        try {
-          document.execCommand('copy');
-          button.textContent = '복사됨!';
-          button.classList.add('copied');
-          setTimeout(() => {
-            button.textContent = '복사';
-            button.classList.remove('copied');
-          }, 1000);
-        } catch (err) {
-          alert('복사에 실패했습니다. 직접 선택해서 복사해주세요.');
-        }
-        document.body.removeChild(textarea);
-      }
-    </script>
   </body>
 </html>
