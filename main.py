@@ -184,9 +184,9 @@ def main():
     question_parser = subparsers.add_parser("question", help="질문형 글 생성 (1회 API 호출)")
     question_parser.add_argument(
         "--category",
-        choices=["ai", "health", "economy", "lifestyle", "food"],
-        default="ai",
-        help="카테고리 선택 (기본: ai)",
+        choices=["ai", "health", "economy", "lifestyle"],
+        default=None,
+        help="카테고리 선택 (미지정 시 가중치 기반 랜덤)",
     )
     question_parser.add_argument(
         "--no-cache",
@@ -198,9 +198,9 @@ def main():
     info_parser = subparsers.add_parser("info", help="정보형 글 생성 (레거시)")
     info_parser.add_argument(
         "--category",
-        choices=["ai", "health", "economy", "lifestyle", "food"],
-        default="ai",
-        help="카테고리 선택 (기본: ai)",
+        choices=["ai", "health", "economy", "lifestyle"],
+        default=None,
+        help="카테고리 선택 (미지정 시 가중치 기반 랜덤)",
     )
 
     # 체험형 글 생성
