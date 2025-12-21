@@ -14,10 +14,7 @@ import google.generativeai as genai
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.settings import GEMINI_API_KEY
 from src.templates.prompts import (
-    INFO_ARTICLE_PROMPT,
     EXPERIENCE_ARTICLE_PROMPT,
-    TOPIC_SUGGESTION_PROMPT,
-    QUESTION_BASED_ARTICLE_PROMPT,
     UNIFIED_ARTICLE_PROMPT,
 )
 
@@ -149,28 +146,6 @@ class ContentGenerator:
 
         raise ValueError(f"JSON 파싱 실패\n원본: {original_text[:1000]}")
 
-    def generate_info_article(self, news_data: dict) -> dict:
-        """정보형 글 생성"""
-        related = "\n".join(
-            [f"  - {a['title']} ({a['source']})" for a in news_data.get("related_articles", [])]
-        )
-
-        prompt = INFO_ARTICLE_PROMPT.format(
-            category_name=news_data["category_name"],
-            main_title=news_data["main_article"]["title"],
-            main_link=news_data["main_article"]["link"],
-            source=news_data["main_article"]["source"],
-            related_articles=related or "없음",
-        )
-
-        response = self.model.generate_content(prompt)
-        article = self._parse_json_response(response.text)
-
-        article["article_type"] = "info"
-        article["source_news"] = news_data["main_article"]["title"]
-
-        return article
-
     def generate_experience_article(self, user_memo: str, category: str = "일상/리뷰") -> dict:
         """체험형 글 생성"""
         prompt = EXPERIENCE_ARTICLE_PROMPT.format(
@@ -185,104 +160,6 @@ class ContentGenerator:
         article["user_memo"] = user_memo
 
         return article
-
-    # ============================================================
-    # 질문형 콘텐츠 생성 (2단계)
-    # ============================================================
-
-    def suggest_topics(self, news_titles: list[dict]) -> dict:
-        """Step 1: 뉴스 제목 기반 블로그 주제 3개 제안
-
-        Args:
-            news_titles: [{"title": "...", "source": "...", "lang": "..."}]
-
-        Returns:
-            {
-                "trend_summary": "핵심 흐름 요약",
-                "reader_perspective": "독자 관점 재해석",
-                "suggested_topics": [{"topic": "...", "target": "...", "reason": "..."}]
-            }
-        """
-        # 뉴스 제목을 문자열로 변환
-        titles_str = "\n".join([f"- {item['title']}" for item in news_titles])
-
-        prompt = TOPIC_SUGGESTION_PROMPT.format(news_titles=titles_str)
-
-        response = self.model.generate_content(prompt)
-        result = self._parse_json_response(response.text)
-
-        return result
-
-    def generate_question_based_article(
-        self,
-        selected_topic: str,
-        trend_summary: str,
-        category_name: str = "AI/테크"
-    ) -> dict:
-        """Step 2: 선택된 주제로 질문형 블로그 글 작성
-
-        Args:
-            selected_topic: 선택된 질문형 주제
-            trend_summary: 뉴스 흐름 요약
-            category_name: 카테고리 이름
-
-        Returns:
-            블로그 글 데이터 (title, content, tags 등)
-        """
-        prompt = QUESTION_BASED_ARTICLE_PROMPT.format(
-            selected_topic=selected_topic,
-            trend_summary=trend_summary,
-            category_name=category_name,
-        )
-
-        response = self.model.generate_content(prompt)
-        article = self._parse_json_response(response.text)
-
-        article["article_type"] = "question_based"
-        article["source_topic"] = selected_topic
-
-        return article
-
-    def generate_from_news_flow(self, news_data: dict, topic_index: int = 0) -> dict:
-        """뉴스 흐름 기반 질문형 글 생성 (통합 메서드)
-
-        Args:
-            news_data: collect_news_titles()의 반환값
-            topic_index: 제안된 주제 중 선택할 인덱스 (0, 1, 2)
-
-        Returns:
-            생성된 블로그 글 데이터
-        """
-        # Step 1: 주제 제안 받기
-        print("📰 뉴스 흐름 분석 중...")
-        topic_result = self.suggest_topics(news_data["titles"])
-
-        print(f"📊 트렌드: {topic_result['trend_summary']}")
-        print(f"👀 독자 관점: {topic_result['reader_perspective']}")
-        print("\n💡 제안된 주제:")
-        for i, t in enumerate(topic_result["suggested_topics"]):
-            print(f"  {i+1}. [{t['target']}] {t['topic']}")
-
-        # Step 2: 주제 선택 및 글 작성
-        selected = topic_result["suggested_topics"][topic_index]
-        print(f"\n✍️ 선택된 주제: {selected['topic']}")
-        print("📝 글 생성 중...")
-
-        article = self.generate_question_based_article(
-            selected_topic=selected["topic"],
-            trend_summary=topic_result["trend_summary"],
-            category_name=news_data["category_name"],
-        )
-
-        # 메타데이터 추가
-        article["topic_data"] = topic_result
-        article["selected_topic_index"] = topic_index
-
-        return article
-
-    # ============================================================
-    # 통합 메서드 (1회 API 호출 + 캐싱)
-    # ============================================================
 
     def generate_unified_article(self, news_data: dict, use_cache: bool = True) -> dict:
         """뉴스 흐름 분석 + 글 작성을 1회 API 호출로 처리
@@ -344,15 +221,16 @@ if __name__ == "__main__":
     generator = ContentGenerator()
 
     print("=" * 50)
-    print("질문형 콘텐츠 생성 테스트 (새로운 방식)")
+    print("통합 글 생성 테스트 (1회 API 호출)")
     print("=" * 50)
 
-    # Step 1: 뉴스 제목 수집
-    news_data = collector.collect_news_titles("ai")
-    print(f"\n수집된 뉴스 제목 수: {len(news_data['titles'])}")
+    # 뉴스 제목 수집
+    news_data = collector.collect_news_titles()
+    print(f"\n카테고리: {news_data['category_name']}")
+    print(f"수집된 뉴스 제목 수: {len(news_data['titles'])}")
 
-    # Step 2: 주제 제안 + 글 생성
-    article = generator.generate_from_news_flow(news_data, topic_index=0)
+    # 통합 글 생성
+    article = generator.generate_unified_article(news_data, use_cache=False)
 
     print(f"\n{'=' * 50}")
     print("=== 생성된 글 ===")

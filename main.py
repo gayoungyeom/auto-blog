@@ -31,13 +31,13 @@ def save_article(article: dict) -> str:
     return article_id
 
 
-def generate_question_article(category: str = None, use_cache: bool = True) -> dict:
-    """질문형 글 생성 파이프라인 (통합 방식 - 1회 API 호출)
+def generate_info_article(category: str = None, use_cache: bool = True) -> dict:
+    """정보형 글 생성 파이프라인 (통합 방식 - 1회 API 호출)
 
     뉴스 흐름 분석 + 주제 선정 + 글 생성을 1회 API 호출로 처리
     """
     print("=" * 50)
-    print("질문형 글 생성 시작 (통합 방식)")
+    print("정보형 글 생성 시작 (통합 방식)")
     print("=" * 50)
 
     # 1. 뉴스 제목 수집
@@ -64,51 +64,6 @@ def generate_question_article(category: str = None, use_cache: bool = True) -> d
     article_id = save_article(article)
     print(f"  - ID: {article_id}")
 
-    sender = EmailSender()
-    success = sender.send_article(article)
-
-    if success:
-        print("\n완료! 이메일을 확인하세요.")
-        print("티스토리에서 복붙 후 발행하면 됩니다.")
-    else:
-        print("\n이메일 발송 실패. 글은 저장되었습니다.")
-        print(f"저장 위치: {ARTICLES_DIR / f'{article_id}.json'}")
-
-    return article
-
-
-def generate_info_article(category: str = None) -> dict:
-    """정보형 글 생성 파이프라인 (레거시)"""
-    print("=" * 50)
-    print("정보형 글 생성 시작 (레거시 모드)")
-    print("=" * 50)
-
-    # 1. 뉴스 수집
-    print("\n[1/4] 뉴스 수집 중...")
-    collector = NewsCollector()
-    news = collector.collect_news(category)
-
-    if "error" in news:
-        print(f"뉴스 수집 실패: {news['error']}")
-        return None
-
-    print(f"  - 카테고리: {news['category_name']}")
-    print(f"  - 메인 기사: {news['main_article']['title']}")
-
-    # 2. 글 생성
-    print("\n[2/4] AI 글 생성 중...")
-    generator = ContentGenerator()
-    article = generator.generate_info_article(news)
-    print(f"  - 제목: {article['title']}")
-    print(f"  - 태그: {', '.join(article['tags'])}")
-
-    # 3. 글 저장
-    print("\n[3/4] 글 저장 중...")
-    article_id = save_article(article)
-    print(f"  - ID: {article_id}")
-
-    # 4. 이메일 발송
-    print("\n[4/4] 이메일 발송 중...")
     sender = EmailSender()
     success = sender.send_article(article)
 
@@ -180,27 +135,18 @@ def main():
     parser = argparse.ArgumentParser(description="Auto-Blog 자동화 시스템")
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
-    # 질문형 글 생성 (통합 방식 - 1회 API 호출)
-    question_parser = subparsers.add_parser("question", help="질문형 글 생성 (1회 API 호출)")
-    question_parser.add_argument(
-        "--category",
-        choices=["ai", "health", "economy", "lifestyle"],
-        default=None,
-        help="카테고리 선택 (미지정 시 가중치 기반 랜덤)",
-    )
-    question_parser.add_argument(
-        "--no-cache",
-        action="store_true",
-        help="캐시 사용 안 함 (새로 생성)",
-    )
-
-    # 정보형 글 생성 (레거시)
-    info_parser = subparsers.add_parser("info", help="정보형 글 생성 (레거시)")
+    # 정보형 글 생성 (통합 방식 - 1회 API 호출)
+    info_parser = subparsers.add_parser("info", help="정보형 글 생성 (1회 API 호출)")
     info_parser.add_argument(
         "--category",
         choices=["ai", "health", "economy", "lifestyle"],
         default=None,
         help="카테고리 선택 (미지정 시 가중치 기반 랜덤)",
+    )
+    info_parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="캐시 사용 안 함 (새로 생성)",
     )
 
     # 체험형 글 생성
@@ -217,10 +163,8 @@ def main():
 
     args = parser.parse_args()
 
-    if args.command == "question":
-        generate_question_article(args.category, use_cache=not args.no_cache)
-    elif args.command == "info":
-        generate_info_article(args.category)
+    if args.command == "info":
+        generate_info_article(args.category, use_cache=not args.no_cache)
     elif args.command == "experience":
         generate_experience_article(args.memo, args.category)
     elif args.command == "list":
@@ -228,9 +172,9 @@ def main():
     else:
         parser.print_help()
         print("\n사용 예시:")
-        print("  python main.py question             # 질문형 글 생성 (1회 API 호출)")
-        print("  python main.py question --no-cache  # 캐시 무시하고 새로 생성")
-        print("  python main.py info                 # 정보형 글 생성 (레거시)")
+        print("  python main.py info             # 정보형 글 생성 (1회 API 호출)")
+        print("  python main.py info --no-cache  # 캐시 무시하고 새로 생성")
+        print("  python main.py experience '메모'    # 체험형 글 생성")
         print("  python main.py list                 # 저장된 글 목록")
 
 
