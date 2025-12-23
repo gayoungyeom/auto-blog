@@ -22,7 +22,8 @@ class ThumbnailGenerator:
     STYLE_PROMPT = (
         "minimalist, modern, clean design, trendy, professional, "
         "soft gradient background, subtle lighting, high quality, "
-        "blog thumbnail style, no text, no watermark"
+        "blog thumbnail style, physical objects only, "
+        "no text, no letters, no words, no watermark, no people, no humans, no faces"
     )
 
     def __init__(self):
@@ -104,9 +105,9 @@ class ThumbnailGenerator:
         # 카테고리별 추가 스타일
         category_style = {
             "ai": "futuristic, neural network visualization, blue and purple tones",
-            "tech": "modern gadgets, sleek design, tech aesthetic",
-            "economy": "business, finance, growth charts, professional",
-            "startup": "innovation, entrepreneurship, modern office",
+            "health": "wellness, healthy lifestyle, fresh and clean, green and white tones",
+            "economy": "business, finance, growth charts, professional, gold and navy tones",
+            "lifestyle": "cozy home, modern living, warm and comfortable, neutral tones",
         }
 
         extra_style = category_style.get(category.lower(), "modern, professional")

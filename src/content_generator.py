@@ -86,7 +86,8 @@ class ContentGenerator:
 
         # 첫 번째 시도: 그대로 파싱
         try:
-            return json.loads(text)
+            result = json.loads(text)
+            return self._clean_content(result)
         except json.JSONDecodeError:
             pass
 
@@ -96,7 +97,8 @@ class ContentGenerator:
             fixed_text = re.sub(r'(?<!\\)\n', '\\n', text)
             # 이스케이프 안 된 탭 처리
             fixed_text = re.sub(r'(?<!\\)\t', '\\t', fixed_text)
-            return json.loads(fixed_text)
+            result = json.loads(fixed_text)
+            return self._clean_content(result)
         except json.JSONDecodeError:
             pass
 
@@ -104,22 +106,34 @@ class ContentGenerator:
         try:
             result = {}
 
-            # 기본 문자열 필드들 추출
+            # 기본 문자열 필드들 추출 (이스케이프된 따옴표 포함 가능)
             string_fields = [
                 "trend_summary", "reader_perspective", "selected_topic",
                 "title", "meta_description", "category"
             ]
             for field in string_fields:
-                match = re.search(rf'"{field}"\s*:\s*"([^"]*)"', text)
+                # 더 유연한 패턴: 이스케이프된 따옴표도 허용
+                match = re.search(rf'"{field}"\s*:\s*"((?:[^"\\]|\\.)*)"', text)
                 if match:
-                    result[field] = match.group(1)
+                    value = match.group(1)
+                    # 이스케이프 문자 정리
+                    value = value.replace('\\"', '"').replace('\\n', ' ').replace('\\t', ' ')
+                    result[field] = value
 
-            # content 필드 (HTML 포함, 복잡함) - tags 앞까지 추출
-            content_match = re.search(r'"content"\s*:\s*"(.*?)",\s*"tags"', text, re.DOTALL)
+            # content 필드 (HTML 포함, 복잡함)
+            # 패턴 1: "content": "..." 다음에 "tags" 또는 "category"가 오는 경우
+            content_match = re.search(r'"content"\s*:\s*"(.*?)"\s*,\s*"(?:tags|category)"', text, re.DOTALL)
+            if not content_match:
+                # 패턴 2: "content": "..." 다음에 ] 또는 } 가 오는 경우
+                content_match = re.search(r'"content"\s*:\s*"(.*?)"\s*[,\}]', text, re.DOTALL)
+
             if content_match:
                 content = content_match.group(1)
                 # 이스케이프 처리
-                content = content.replace('\n', '').replace('\r', '')
+                content = content.replace('\\n', '').replace('\\r', '').replace('\\t', '')
+                content = content.replace('\n', '').replace('\r', '').replace('\t', '')
+                # 이스케이프된 따옴표 복원
+                content = content.replace('\\"', '"')
                 result["content"] = content
 
             # tags 배열 추출
@@ -131,7 +145,8 @@ class ContentGenerator:
 
             # 필수 필드 확인
             if result.get("title") and result.get("content"):
-                return result
+                print("  (필드별 추출 방식으로 파싱 성공)")
+                return self._clean_content(result)
 
         except Exception as e:
             print(f"필드별 추출 실패: {e}")
@@ -140,11 +155,44 @@ class ContentGenerator:
         try:
             # content 내부의 이스케이프 안 된 따옴표 처리
             fixed_text = re.sub(r'(?<!\\)"(?=[^:,\[\]{}]*[,\]\}])', '\\"', text)
-            return json.loads(fixed_text)
-        except json.JSONDecodeError:
-            pass
+            result = json.loads(fixed_text)
+            return self._clean_content(result)
+        except json.JSONDecodeError as e:
+            print(f"네 번째 시도 실패: {e}")
 
-        raise ValueError(f"JSON 파싱 실패\n원본: {original_text[:1000]}")
+        # 다섯 번째 시도: 더 공격적인 정리
+        try:
+            # 모든 줄바꿈을 공백으로 치환
+            cleaned = text.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
+            # 연속 공백 제거
+            cleaned = re.sub(r'\s+', ' ', cleaned)
+            result = json.loads(cleaned)
+            print("  (공격적 정리 방식으로 파싱 성공)")
+            return self._clean_content(result)
+        except json.JSONDecodeError as e:
+            print(f"다섯 번째 시도 실패: {e}")
+
+        # 디버깅: 원본 텍스트 일부 출력
+        print(f"\n=== JSON 파싱 실패 디버깅 ===")
+        print(f"원본 길이: {len(original_text)}")
+        print(f"처리된 텍스트 길이: {len(text)}")
+        print(f"처리된 텍스트 앞부분:\n{text[:500]}")
+        print(f"\n처리된 텍스트 뒷부분:\n{text[-500:]}")
+
+        raise ValueError(f"JSON 파싱 실패 - 모든 시도 실패")
+
+    def _clean_content(self, result: dict) -> dict:
+        """content 필드에서 불필요한 이스케이프 문자 제거"""
+        if "content" in result:
+            content = result["content"]
+            # 리터럴 \n 문자열 제거 (HTML에서는 불필요)
+            content = content.replace("\\n", "")
+            # 리터럴 \t 문자열 제거
+            content = content.replace("\\t", "")
+            # 연속 공백 정리
+            content = re.sub(r"\s{2,}", " ", content)
+            result["content"] = content
+        return result
 
     def generate_experience_article(self, user_memo: str, category: str = "일상/리뷰") -> dict:
         """체험형 글 생성"""
