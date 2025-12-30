@@ -16,6 +16,7 @@ from config.settings import GEMINI_API_KEY
 from src.templates.prompts import (
     EXPERIENCE_ARTICLE_PROMPT,
     UNIFIED_ARTICLE_PROMPT,
+    CHANGE_SUB_TITLE_PROMPT,
 )
 
 
@@ -34,7 +35,7 @@ class ContentGenerator:
             "gemini-2.5-flash",
             generation_config={
                 "response_mime_type": "application/json",
-                "max_output_tokens": 8192,
+                "max_output_tokens": 16384,
             }
         )
         # 캐시 디렉토리 생성
@@ -108,7 +109,7 @@ class ContentGenerator:
 
             # 기본 문자열 필드들 추출 (이스케이프된 따옴표 포함 가능)
             string_fields = [
-                "trend_summary", "reader_perspective", "selected_topic",
+                "selected_topic",
                 "title", "meta_description", "category"
             ]
             for field in string_fields:
@@ -135,6 +136,13 @@ class ContentGenerator:
                 # 이스케이프된 따옴표 복원
                 content = content.replace('\\"', '"')
                 result["content"] = content
+
+            # trend_keywords 배열 추출
+            keywords_match = re.search(r'"trend_keywords"\s*:\s*\[(.*?)\]', text, re.DOTALL)
+            if keywords_match:
+                keywords_str = keywords_match.group(1)
+                keywords = [k.strip().strip('"').strip("'") for k in keywords_str.split(',') if k.strip()]
+                result["trend_keywords"] = keywords
 
             # tags 배열 추출
             tags_match = re.search(r'"tags"\s*:\s*\[(.*?)\]', text, re.DOTALL)
@@ -233,19 +241,28 @@ class ContentGenerator:
         # 뉴스 제목을 문자열로 변환
         titles_str = "\n".join([f"- {item['title']}" for item in titles])
 
-        # 통합 프롬프트로 1회 API 호출
-        print("📰 뉴스 분석 및 글 생성 중... (1회 API 호출)")
+        # 글 생성 프롬프트 호출
+        print("📰 뉴스 분석 및 글 생성 중...")
         prompt = UNIFIED_ARTICLE_PROMPT.format(
             news_titles=titles_str,
             category_name=category_name,
         )
 
         response = self.model.generate_content(prompt)
-        article = self._parse_json_response(response.text)
+        origin_article = self._parse_json_response(response.text)
+
+        # 생성된 글 소제목 변경 프롬프트 호출
+        print("📰 소제목 변경 중...")
+        prompt = CHANGE_SUB_TITLE_PROMPT.format(
+            article_content=origin_article.get('content', ''),
+        )
+
+        response = self.model.generate_content(prompt)
+        article = {**origin_article, 'content': response.text}
 
         # 결과 출력
-        print(f"📊 트렌드: {article.get('trend_summary', '')}")
-        print(f"👀 독자 관점: {article.get('reader_perspective', '')}")
+        trend_keywords = article.get('trend_keywords', [])
+        print(f"🔑 트렌드 키워드: {', '.join(trend_keywords) if trend_keywords else 'N/A'}")
         print(f"💡 선정된 주제: {article.get('selected_topic', '')}")
         print(f"✍️ 제목: {article.get('title', '')}")
 
